@@ -3,7 +3,7 @@ import random
 from datetime import datetime
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="Smart Parking System - Visual Denah", page_icon="🅿️", layout="centered")
+st.set_page_config(page_title="Smart Parking System - QR & Barcode", page_icon="🅿️", layout="centered")
 
 # Custom CSS untuk Tampilan Modern & Grid Slot Parkir
 st.markdown("""
@@ -81,9 +81,8 @@ st.markdown("""
 
 st.divider()
 
-# Inisialisasi State untuk Menyimpan Status Slot Parkir di Memori Aplikasi
+# Inisialisasi State untuk Status Slot Parkir
 if 'slot_status' not in st.session_state:
-    # 0 = Kosong (Hijau), 1 = Terisi/Penuh (Merah)
     st.session_state.slot_status = {
         "A1": 0, "A2": 1, "A3": 0, "A4": 0,
         "B1": 1, "B2": 1, "B3": 0, "B4": 1,
@@ -91,7 +90,7 @@ if 'slot_status' not in st.session_state:
     }
 
 # Navigasi Menu Atas
-menu_pilihan = st.radio("Pilih Menu Sistem:", ["📝 Pintu Masuk", "💳 Pintu Keluar & Tarif", "🗺️ Denah Status Slot Parkir", "📊 Dashboard Admin"], horizontal=True)
+menu_pilihan = st.radio("Pilih Menu Sistem:", ["📝 Pintu Masuk", "💳 Pintu Keluar & Pembayaran", "🗺️ Denah Status Slot Parkir", "📊 Dashboard Admin"], horizontal=True)
 
 st.write("")
 
@@ -110,14 +109,12 @@ if menu_pilihan == "📝 Pintu Masuk":
                 "⚡ Mobil Listrik (EV)", 
                 "🚙 SUV / Besar"
             ])
-            # Cari slot kosong otomatis dari state
             slot_tersedia = [k for k, v in st.session_state.slot_status.items() if v == 0]
             pilih_slot = st.selectbox("Alokasi Slot Otomatis:", slot_tersedia if slot_tersedia else ["Semua Penuh!"])
         
         submit_entry = st.form_submit_button("Cetak Karcis & Update Slot 🚀")
         
         if submit_entry and slot_tersedia:
-            # Ubah status slot jadi penuh (1)
             st.session_state.slot_status[pilih_slot] = 1
             waktu_masuk = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
@@ -133,14 +130,19 @@ if menu_pilihan == "📝 Pintu Masuk":
         elif submit_entry:
             st.error("Maaf, seluruh slot parkir sedang penuh!")
 
-# --- MENU 2: EXIT GATE & KALKULATOR LKPD ---
-elif menu_pilihan == "💳 Pintu Keluar & Tarif":
+# --- MENU 2: EXIT GATE & PEMBAYARAN DENGAN BARCODE ---
+elif menu_pilihan == "💳 Pintu Keluar & Pembayaran":
     st.subheader("📤 Kalkulator Tarif & Pembayaran Parkir")
     
     plat_keluar = st.text_input("Nomor Plat Kendaraan Keluar:", "B 1234 XYZ")
     jam_parkir = st.slider("Durasi Waktu Parkir (Jam):", min_value=1, max_value=24, value=6)
     
-    # Pilih slot mana yang mau dibebaskan/dikosongkan kembali
+    metode_bayar = st.selectbox("Pilih Metode Pembayaran Non-Tunai / Tunai:", [
+        "📱 QRIS (GoPay / OVO / Dana / BCA)", 
+        "💳 Kartu Member / E-Money (Flazz / Mandiri e-Money)", 
+        "💵 Tunai (Cash)"
+    ])
+    
     slot_terisi = [k for k, v in st.session_state.slot_status.items() if v == 1]
     slot_to_free = st.selectbox("Pilih Slot yang Dikosongkan:", slot_terisi if slot_terisi else ["Tidak ada kendaraan di dalam"])
 
@@ -156,25 +158,39 @@ elif menu_pilihan == "💳 Pintu Keluar & Tarif":
             biaya -= diskon
         return biaya, diskon
 
-    if st.button("Bayar & Kosongkan Slot 🖨️"):
+    if st.button("Bayar & Cetak Struk Berbarcode 🖨️"):
         total_biaya, diskon_didapat = hitung_tarif(jam_parkir)
         if slot_terisi:
-            st.session_state.slot_status[slot_to_free] = 0 # Ubah jadi kosong lagi (0)
+            st.session_state.slot_status[slot_to_free] = 0 
             
         waktu_keluar = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        token_transaksi = f"PARK-{random.randint(10000, 99999)}"
         
-        st.markdown(f"""
-            <div class="receipt-box">
-                <h3 style="text-align: center; margin-top: 0; color: #0284c7;">STRUK RESMI PARKIR</h3>
-                <hr style="border: 1px dashed #cbd5e1;">
-                <p><b>Waktu Keluar:</b> {waktu_keluar}</p>
-                <p><b>Plat Nomor:</b> {plat_keluar}</p>
-                <p><b>Durasi:</b> {jam_parkir} Jam | <b>Slot Bebas:</b> {slot_to_free}</p>
-                <p><b>Potongan Diskon:</b> Rp {diskon_didapat:,}</p>
-                <hr style="border: 1px dashed #cbd5e1;">
-                <h3 style="color: #16a34a; text-align: center;">TOTAL BAYAR: Rp {total_biaya:,}</h3>
-            </div>
-        """, unsafe_allow_html=True)
+        # Layout Struk dan Barcode
+        col_struk1, col_struk2 = st.columns([1.5, 1])
+        
+        with col_struk1:
+            st.markdown(f"""
+                <div class="receipt-box">
+                    <h3 style="text-align: center; margin-top: 0; color: #0284c7;">STRUK RESMI PARKIR</h3>
+                    <hr style="border: 1px dashed #cbd5e1;">
+                    <p><b>Token:</b> {token_transaksi}</p>
+                    <p><b>Waktu Keluar:</b> {waktu_keluar}</p>
+                    <p><b>Plat Nomor:</b> {plat_keluar}</p>
+                    <p><b>Durasi:</b> {jam_parkir} Jam | <b>Slot Bebas:</b> {slot_to_free}</p>
+                    <p><b>Potongan Diskon:</b> Rp {diskon_didapat:,}</p>
+                    <p><b>Metode Pembayaran:</b> {metode_bayar}</p>
+                    <hr style="border: 1px dashed #cbd5e1;">
+                    <h3 style="color: #16a34a; text-align: center;">TOTAL BAYAR: Rp {total_biaya:,}</h3>
+                    <p style="text-align: center; font-size: 0.85rem; color: #64748b;">Status: LUNAS ✅</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        with col_struk2:
+            st.markdown("### **📱 Barcode / QR Valet**")
+            # Menampilkan QR Code digital otomatis menggunakan API publik gratis
+            qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=Paid-{token_transaksi}-{plat_keluar}"
+            st.image(qr_url, caption="Scan QR untuk Buka Gerbang Keluar", width=160)
 
 # --- MENU 3: DENAH VISUAL SLOT PARKIR ---
 elif menu_pilihan == "🗺️ Denah Status Slot Parkir":
@@ -183,7 +199,6 @@ elif menu_pilihan == "🗺️ Denah Status Slot Parkir":
     
     st.write("")
     
-    # Membuat Grid Tampilan Visual Berdasarkan Status Dictionary
     cols = st.columns(4)
     idx = 0
     for slot, status in st.session_state.slot_status.items():
