@@ -1,116 +1,172 @@
+
 import streamlit as st
+import random
+from datetime import datetime
 
-# Konfigurasi Halaman & Tema Minimalis Elegan
-st.set_page_config(page_title="Velora // Smart Parking", page_icon="🅿️", layout="centered")
+# Konfigurasi Halaman
+st.set_page_config(page_title="Smart Parking System - Ultimate Dashboard", page_icon="🅿️", layout="centered")
 
-# Custom CSS untuk Tampilan Clean, Modern, & Chill (Dark/Light Balance)
+# Custom CSS untuk Tampilan Dashboard Profesional
 st.markdown("""
     <style>
     .stApp {
-        background-color: #0b0f19;
-        color: #f1f5f9;
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
+    .header-container {
+        text-align: center;
+        padding: 15px 0;
     }
     .main-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #38bdf8, #818cf8);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-align: center;
-        margin-bottom: 0px;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #38bdf8;
+        margin-top: 5px;
     }
-    .subtitle {
-        text-align: center;
-        color: #94a3b8;
-        font-size: 0.95rem;
-        margin-bottom: 30px;
-    }
-    .card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(51, 65, 85, 0.6);
+    .dashboard-card {
+        background: #1e293b;
+        border: 1px solid #334155;
         padding: 20px;
-        border-radius: 16px;
-        backdrop-filter: blur(10px);
-        margin-bottom: 20px;
+        border-radius: 12px;
+        margin-bottom: 15px;
+    }
+    .receipt-box {
+        background: #f8fafc;
+        color: #0f172a;
+        padding: 20px;
+        border-radius: 12px;
+        border-left: 5px solid #0284c7;
+        font-family: monospace;
     }
     .stButton>button {
         width: 100%;
-        background: linear-gradient(135deg, #0284c7 0%, #6366f1 100%);
+        background: #0284c7;
         color: white;
         border: none;
         padding: 12px;
-        border-radius: 10px;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
+        border-radius: 8px;
+        font-weight: bold;
+        transition: 0.2s;
     }
     .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        background: #0369a1;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Header Halaman
-st.markdown('<p class="main-title">Velora Parking Space</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Sistem kalkulasi tarif otomatis dengan presisi tinggi.</p>', unsafe_allow_html=True)
+# --- HEADER / MENU UTAMA ---
+st.markdown("""
+    <div class="header-container">
+        <h1 style="font-size: 45px; margin: 0;">🚗🔍</h1>
+        <p class="main-title">Smart Parking Management System</p>
+    </div>
+""", unsafe_allow_html=True)
 
-# Container Input Data
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("📋 Informasi Kendaraan")
+st.divider()
+
+# Navigasi Menu Atas (Simulasi Dashboard)
+menu_pilihan = st.radio("Pilih Menu Sistem:", ["📝 Pintu Masuk (Entry Gate)", "💳 Pembayaran & Keluar (Exit Gate)", "📊 Dashboard Admin"], horizontal=True)
+
+st.write("")
+
+# --- MENU 1: ENTRY GATE ---
+if menu_pilihan == "📝 Pintu Masuk (Entry Gate)":
+    st.subheader("📥 Pendaftaran & Masuk Kendaraan")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        nama = st.text_input("Nama Pengemudi", "Nafes")
-    with col2:
-        plat = st.text_input("Nomor Kendaraan", "B 1234 XYZ")
+    with st.form("entry_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            nama_driver = st.text_input("Nama Pengemudi:", "Nafes")
+            plat_nomor = st.text_input("Nomor Plat Kendaraan:", "B 1234 XYZ")
+        with col2:
+            tipe_kendaraan = st.selectbox("Jenis Kendaraan:", [
+                "🚗 Mobil Standar (Bensin/Diesel)", 
+                "⚡ Mobil Listrik (EV Charging)", 
+                "🚙 SUV / Kendaraan Besar"
+            ])
+            lantai_tujuan = st.selectbox("Zona Parkir:", ["Lantai P1 - Zona A (Regular)", "Lantai P2 - Zona B (VIP)", "Lantai P3 - Zona EV Charging"])
         
-    tipe_kendaraan = st.selectbox("Jenis Kendaraan", [
-        "🚗 Mobil Standar", 
-        "⚡ Mobil Listrik (EV)", 
-        "🚙 SUV / Medium Vehicle"
+        submit_entry = st.form_submit_button("Cetak Karcis & Alokasikan Slot 🚀")
+        
+        if submit_entry:
+            waktu_masuk = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            nomor_slot_parkir = random.randint(10, 99)
+            
+            st.success("✅ Kendaraan Berhasil Terdaftar!")
+            st.markdown(f"""
+                <div class="dashboard-card">
+                    <h4 style="color: #38bdf8; margin-top: 0;">🎟️ Karcis Masuk Digital</h4>
+                    <p><b>Waktu Masuk:</b> {waktu_masuk}</p>
+                    <p><b>Pengemudi:</b> {nama_driver} ({plat_nomor})</p>
+                    <p><b>Kendaraan:</b> {tipe_kendaraan}</p>
+                    <p><b>Lokasi Slot:</b> {lantai_tujuan} (Slot No. #{nomor_slot_parkir})</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+# --- MENU 2: EXIT GATE & KALKULATOR LKPD ---
+elif menu_pilihan == "💳 Pembayaran & Keluar (Exit Gate)":
+    st.subheader("📤 Kalkulator Tarif & Pembayaran Parkir")
+    
+    plat_keluar = st.text_input("Masukkan Nomor Plat Kendaraan Saat Keluar:", "B 1234 XYZ")
+    jam_parkir = st.slider("Pilih Durasi Waktu Parkir (Jam):", min_value=1, max_value=24, value=6)
+    
+    metode_bayar = st.selectbox("Pilih Metode Pembayaran Non-Tunai:", [
+        "📱 QRIS (GoPay/OVO/Dana)", 
+        "💳 Kartu Member / E-Money", 
+        "💵 Tunai (Cash)"
     ])
-    st.markdown('</div>', unsafe_allow_html=True)
 
-# Container Kalkulator Durasi
-with st.container():
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("⏱️ Durasi Parkir")
-    jam_parkir = st.slider("Pilih Lama Waktu Parkir (Jam)", min_value=1, max_value=24, value=3)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-# Logika Perhitungan Tarif Sesuai LKPD
-if jam_parkir <= 1:
-    total_biaya = 5000
-else:
-    total_biaya = 5000 + (jam_parkir - 1) * 3000
-
-diskon = 0
-if jam_parkir > 5:
-    diskon = 2000
-    total_biaya -= diskon
-
-# Tombol Eksekusi & Hasil Interaktif
-if st.button("Kalkulasi Tarif Sekarang 🚀"):
-    st.divider()
-    
-    # Tampilan Metrik Estetik
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric(label="Pengemudi", value=nama)
-    with m2:
-        st.metric(label="Durasi", value=f"{jam_parkir} Jam")
-    with m3:
-        st.metric(label="Diskon", value=f"Rp {diskon:,}")
+    # Logika Tarif LKPD
+    def hitung_tarif(jam):
+        if jam <= 1:
+            biaya = 5000
+        else:
+            biaya = 5000 + (jam - 1) * 3000
         
-    # Kotak Total Biaya Menarik
-    st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #065f46 0%, #047857 100%); padding: 22px; border-radius: 14px; text-align: center; margin-top: 20px; box-shadow: 0 8px 25px rgba(5, 150, 105, 0.2);">
-            <p style="margin: 0; color: #a7f3d0; font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Total Biaya Akhir</p>
-            <h1 style="margin: 5px 0 0 0; color: #ffffff; font-size: 2.5rem;">Rp {total_biaya:,}</h1>
-        </div>
-    """, unsafe_allow_html=True)
+        diskon = 0
+        if jam > 5:
+            diskon = 2000
+            biaya -= diskon
+            
+        return biaya, diskon
+
+    if st.button("Proses Pembayaran & Cetak Struk 🖨️"):
+        total_biaya, diskon_didapat = hitung_tarif(jam_parkir)
+        waktu_keluar = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        st.write("")
+        st.markdown(f"""
+            <div class="receipt-box">
+                <h3 style="text-align: center; margin-top: 0; color: #0284c7;">STRUK RESMI PARKIR</h3>
+                <hr style="border: 1px dashed #cbd5e1;">
+                <p><b>Waktu Keluar:</b> {waktu_keluar}</p>
+                <p><b>Plat Nomor:</b> {plat_keluar}</p>
+                <p><b>Durasi Parkir:</b> {jam_parkir} Jam</p>
+                <p><b>Potongan Diskon:</b> Rp {diskon_didapat:,}</p>
+                <hr style="border: 1px dashed #cbd5e1;">
+                <h3 style="color: #16a34a; text-align: center;">TOTAL BAYAR: Rp {total_biaya:,}</h3>
+                <p style="text-align: center; font-size: 0.85rem; color: #64748b;">Metode: {metode_bayar} - LUNAS</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if jam_parkir > 5:
+            st.info("💡 Selamat! Anda mendapatkan potongan diskon Rp 2.000 karena durasi parkir lebih dari 5 jam.")
+
+# --- MENU 3: DASHBOARD ADMIN ---
+else:
+    st.subheader("📊 Dashboard Admin & Rekapitulasi")
     
-    if jam_parkir > 5:
-        st.success("✨ Selamat! Anda mendapatkan potongan diskon sebesar Rp 2.000 karena durasi parkir lebih dari 5 jam.")
+    col_m1, col_m2, col_m3 = st.columns(3)
+    with col_m1:
+        st.metric(label="Total Kendaraan Masuk Hari Ini", value="142 Unit", delta="+12%")
+    with col_m2:
+        st.metric(label="Slot Parkir Kosong", value="58 Slot", delta="-5%")
+    with col_m3:
+        st.metric(label="Estimasi Pendapatan Harian", value="Rp 2.850.000", delta="+18%")
+        
+    st.divider()
+    st.subheader("📈 Statistik Penggunaan Kendaraan")
+    
+    # Grafik dummy sederhana menggunakan chart bawaan Streamlit
+    chart_data = {"Mobil Standar": 85, "SUV / Besar": 32, "Mobil Listrik (EV)": 25}
+    st.bar_chart(chart_data)
