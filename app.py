@@ -1,12 +1,11 @@
-
 import streamlit as st
 import random
 from datetime import datetime
 
 # Konfigurasi Halaman
-st.set_page_config(page_title="Smart Parking System - Ultimate Dashboard", page_icon="🅿️", layout="centered")
+st.set_page_config(page_title="Smart Parking System - Visual Denah", page_icon="🅿️", layout="centered")
 
-# Custom CSS untuk Tampilan Dashboard Profesional
+# Custom CSS untuk Tampilan Modern & Grid Slot Parkir
 st.markdown("""
     <style>
     .stApp {
@@ -38,6 +37,24 @@ st.markdown("""
         border-left: 5px solid #0284c7;
         font-family: monospace;
     }
+    .slot-box-kosong {
+        background-color: #064e3b;
+        border: 1px solid #10b981;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        color: #6ee7b7;
+        font-weight: bold;
+    }
+    .slot-box-penuh {
+        background-color: #7f1d1d;
+        border: 1px solid #ef4444;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        color: #fca5a5;
+        font-weight: bold;
+    }
     .stButton>button {
         width: 100%;
         background: #0284c7;
@@ -54,23 +71,32 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- HEADER / MENU UTAMA ---
+# --- HEADER UTAMA ---
 st.markdown("""
     <div class="header-container">
-        <h1 style="font-size: 45px; margin: 0;">🚗🔍</h1>
+        <h1 style="font-size: 45px; margin: 0;">🚗🅿️</h1>
         <p class="main-title">Smart Parking Management System</p>
     </div>
 """, unsafe_allow_html=True)
 
 st.divider()
 
-# Navigasi Menu Atas (Simulasi Dashboard)
-menu_pilihan = st.radio("Pilih Menu Sistem:", ["📝 Pintu Masuk (Entry Gate)", "💳 Pembayaran & Keluar (Exit Gate)", "📊 Dashboard Admin"], horizontal=True)
+# Inisialisasi State untuk Menyimpan Status Slot Parkir di Memori Aplikasi
+if 'slot_status' not in st.session_state:
+    # 0 = Kosong (Hijau), 1 = Terisi/Penuh (Merah)
+    st.session_state.slot_status = {
+        "A1": 0, "A2": 1, "A3": 0, "A4": 0,
+        "B1": 1, "B2": 1, "B3": 0, "B4": 1,
+        "VIP 1": 0, "VIP 2": 1
+    }
+
+# Navigasi Menu Atas
+menu_pilihan = st.radio("Pilih Menu Sistem:", ["📝 Pintu Masuk", "💳 Pintu Keluar & Tarif", "🗺️ Denah Status Slot Parkir", "📊 Dashboard Admin"], horizontal=True)
 
 st.write("")
 
 # --- MENU 1: ENTRY GATE ---
-if menu_pilihan == "📝 Pintu Masuk (Entry Gate)":
+if menu_pilihan == "📝 Pintu Masuk":
     st.subheader("📥 Pendaftaran & Masuk Kendaraan")
     
     with st.form("entry_form"):
@@ -80,43 +106,44 @@ if menu_pilihan == "📝 Pintu Masuk (Entry Gate)":
             plat_nomor = st.text_input("Nomor Plat Kendaraan:", "B 1234 XYZ")
         with col2:
             tipe_kendaraan = st.selectbox("Jenis Kendaraan:", [
-                "🚗 Mobil Standar (Bensin/Diesel)", 
-                "⚡ Mobil Listrik (EV Charging)", 
-                "🚙 SUV / Kendaraan Besar"
+                "🚗 Mobil Standar", 
+                "⚡ Mobil Listrik (EV)", 
+                "🚙 SUV / Besar"
             ])
-            lantai_tujuan = st.selectbox("Zona Parkir:", ["Lantai P1 - Zona A (Regular)", "Lantai P2 - Zona B (VIP)", "Lantai P3 - Zona EV Charging"])
+            # Cari slot kosong otomatis dari state
+            slot_tersedia = [k for k, v in st.session_state.slot_status.items() if v == 0]
+            pilih_slot = st.selectbox("Alokasi Slot Otomatis:", slot_tersedia if slot_tersedia else ["Semua Penuh!"])
         
-        submit_entry = st.form_submit_button("Cetak Karcis & Alokasikan Slot 🚀")
+        submit_entry = st.form_submit_button("Cetak Karcis & Update Slot 🚀")
         
-        if submit_entry:
+        if submit_entry and slot_tersedia:
+            # Ubah status slot jadi penuh (1)
+            st.session_state.slot_status[pilih_slot] = 1
             waktu_masuk = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            nomor_slot_parkir = random.randint(10, 99)
             
-            st.success("✅ Kendaraan Berhasil Terdaftar!")
+            st.success(f"✅ Kendaraan Berhasil Masuk ke Slot **{pilih_slot}**!")
             st.markdown(f"""
                 <div class="dashboard-card">
                     <h4 style="color: #38bdf8; margin-top: 0;">🎟️ Karcis Masuk Digital</h4>
-                    <p><b>Waktu Masuk:</b> {waktu_masuk}</p>
-                    <p><b>Pengemudi:</b> {nama_driver} ({plat_nomor})</p>
-                    <p><b>Kendaraan:</b> {tipe_kendaraan}</p>
-                    <p><b>Lokasi Slot:</b> {lantai_tujuan} (Slot No. #{nomor_slot_parkir})</p>
+                    <p><b>Waktu:</b> {waktu_masuk}</p>
+                    <p><b>Driver:</b> {nama_driver} ({plat_nomor})</p>
+                    <p><b>Slot Parkir:</b> {pilih_slot}</p>
                 </div>
             """, unsafe_allow_html=True)
+        elif submit_entry:
+            st.error("Maaf, seluruh slot parkir sedang penuh!")
 
 # --- MENU 2: EXIT GATE & KALKULATOR LKPD ---
-elif menu_pilihan == "💳 Pembayaran & Keluar (Exit Gate)":
+elif menu_pilihan == "💳 Pintu Keluar & Tarif":
     st.subheader("📤 Kalkulator Tarif & Pembayaran Parkir")
     
-    plat_keluar = st.text_input("Masukkan Nomor Plat Kendaraan Saat Keluar:", "B 1234 XYZ")
-    jam_parkir = st.slider("Pilih Durasi Waktu Parkir (Jam):", min_value=1, max_value=24, value=6)
+    plat_keluar = st.text_input("Nomor Plat Kendaraan Keluar:", "B 1234 XYZ")
+    jam_parkir = st.slider("Durasi Waktu Parkir (Jam):", min_value=1, max_value=24, value=6)
     
-    metode_bayar = st.selectbox("Pilih Metode Pembayaran Non-Tunai:", [
-        "📱 QRIS (GoPay/OVO/Dana)", 
-        "💳 Kartu Member / E-Money", 
-        "💵 Tunai (Cash)"
-    ])
+    # Pilih slot mana yang mau dibebaskan/dikosongkan kembali
+    slot_terisi = [k for k, v in st.session_state.slot_status.items() if v == 1]
+    slot_to_free = st.selectbox("Pilih Slot yang Dikosongkan:", slot_terisi if slot_terisi else ["Tidak ada kendaraan di dalam"])
 
-    # Logika Tarif LKPD
     def hitung_tarif(jam):
         if jam <= 1:
             biaya = 5000
@@ -127,46 +154,70 @@ elif menu_pilihan == "💳 Pembayaran & Keluar (Exit Gate)":
         if jam > 5:
             diskon = 2000
             biaya -= diskon
-            
         return biaya, diskon
 
-    if st.button("Proses Pembayaran & Cetak Struk 🖨️"):
+    if st.button("Bayar & Kosongkan Slot 🖨️"):
         total_biaya, diskon_didapat = hitung_tarif(jam_parkir)
+        if slot_terisi:
+            st.session_state.slot_status[slot_to_free] = 0 # Ubah jadi kosong lagi (0)
+            
         waktu_keluar = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        st.write("")
         st.markdown(f"""
             <div class="receipt-box">
                 <h3 style="text-align: center; margin-top: 0; color: #0284c7;">STRUK RESMI PARKIR</h3>
                 <hr style="border: 1px dashed #cbd5e1;">
                 <p><b>Waktu Keluar:</b> {waktu_keluar}</p>
                 <p><b>Plat Nomor:</b> {plat_keluar}</p>
-                <p><b>Durasi Parkir:</b> {jam_parkir} Jam</p>
+                <p><b>Durasi:</b> {jam_parkir} Jam | <b>Slot Bebas:</b> {slot_to_free}</p>
                 <p><b>Potongan Diskon:</b> Rp {diskon_didapat:,}</p>
                 <hr style="border: 1px dashed #cbd5e1;">
                 <h3 style="color: #16a34a; text-align: center;">TOTAL BAYAR: Rp {total_biaya:,}</h3>
-                <p style="text-align: center; font-size: 0.85rem; color: #64748b;">Metode: {metode_bayar} - LUNAS</p>
             </div>
         """, unsafe_allow_html=True)
-        
-        if jam_parkir > 5:
-            st.info("💡 Selamat! Anda mendapatkan potongan diskon Rp 2.000 karena durasi parkir lebih dari 5 jam.")
 
-# --- MENU 3: DASHBOARD ADMIN ---
+# --- MENU 3: DENAH VISUAL SLOT PARKIR ---
+elif menu_pilihan == "🗺️ Denah Status Slot Parkir":
+    st.subheader("🗺️ Visualisasi Real-Time Ketersediaan Slot Parkir")
+    st.info("🟩 Hijau = Kosong (Tersedia) | 🟥 Merah = Penuh (Terisi)")
+    
+    st.write("")
+    
+    # Membuat Grid Tampilan Visual Berdasarkan Status Dictionary
+    cols = st.columns(4)
+    idx = 0
+    for slot, status in st.session_state.slot_status.items():
+        with cols[idx % 4]:
+            if status == 0:
+                st.markdown(f"""
+                    <div class="slot-box-kosong">
+                        <h4>{slot}</h4>
+                        <p style="margin:0; font-size: 12px;">🟢 KOSONG</p>
+                    </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                    <div class="slot-box-penuh">
+                        <h4>{slot}</h4>
+                        <p style="margin:0; font-size: 12px;">🔴 PENUH</p>
+                    </div>
+                """, unsafe_allow_html=True)
+        idx += 1
+
+# --- MENU 4: DASHBOARD ADMIN ---
 else:
-    st.subheader("📊 Dashboard Admin & Rekapitulasi")
+    st.subheader("📊 Dashboard Admin & Statistik")
+    
+    total_kosong = list(st.session_state.slot_status.values()).count(0)
+    total_penuh = list(st.session_state.slot_status.values()).count(1)
     
     col_m1, col_m2, col_m3 = st.columns(3)
     with col_m1:
-        st.metric(label="Total Kendaraan Masuk Hari Ini", value="142 Unit", delta="+12%")
+        st.metric(label="Slot Terisi", value=f"{total_penuh} Unit")
     with col_m2:
-        st.metric(label="Slot Parkir Kosong", value="58 Slot", delta="-5%")
+        st.metric(label="Slot Kosong", value=f"{total_kosong} Slot")
     with col_m3:
-        st.metric(label="Estimasi Pendapatan Harian", value="Rp 2.850.000", delta="+18%")
+        st.metric(label="Estimasi Pendapatan", value="Rp 2.850.000")
         
     st.divider()
-    st.subheader("📈 Statistik Penggunaan Kendaraan")
-    
-    # Grafik dummy sederhana menggunakan chart bawaan Streamlit
-    chart_data = {"Mobil Standar": 85, "SUV / Besar": 32, "Mobil Listrik (EV)": 25}
-    st.bar_chart(chart_data)
+    st.bar_chart({"Mobil Standar": 85, "SUV / Besar": 32, "Mobil Listrik": 25})
